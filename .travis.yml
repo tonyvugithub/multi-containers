@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  # If you have more containers to test, build the test container here, then add scripts to run the test below
+  - docker build -t tonyvu1991/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true tonyvu1991/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t tonyvu1991/multi-client ./client
+  - docker build -t tonyvu1991/multi-nginx ./nginx
+  - docker build -t tonyvu1991/multi-api ./api
+  - docker build -t tonyvu1991/multi-worker ./worker
+  # Login to the Docker CLI, $DOCKER_PASSWORD and $DOCKER_ID are environment variables saved on Travis
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push tonyvu1991/multi-client
+  - docker push tonyvu1991/multi-nginx
+  - docker push tonyvu1991/multi-api
+  - docker push tonyvu1991/multi-worker
